@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"net"
 	"os"
+	"time"
 	"wolfcli/global"
 )
 
@@ -44,10 +45,9 @@ func Execute() {
 }
 
 func init() {
-
 	rootCmd.PersistentFlags().IPVarP(&global.IP, "ip", "i", net.IPv4(127, 0, 0, 1), "战狼服务器ip")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().IPVar(&global.DBIP, "dip", net.IPv4(127, 0, 0, 1), "战狼服务器数据库ip")
+	rootCmd.PersistentFlags().IPVar(&global.PicIP, "pip", net.IPv4(127, 0, 0, 1), "图片服务器ip")
+	rootCmd.PersistentFlags().StringVar(&global.PicPort, "pport", "9333", "图片服务器端口")
+	rootCmd.PersistentFlags().DurationVar(&global.HttpTimeOut, "timeout", 5*time.Second, "http超时时间(单位:秒)")
 }

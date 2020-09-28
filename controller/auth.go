@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"container/list"
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego/httplib"
@@ -17,15 +18,14 @@ func ProductToken() string {
 	account := make(map[string]string)
 	account["username"] = "admin"
 	account["password"] = "admin@2013"
-	accountM, err := json.Marshal(&account)
-	if err != nil {
-
-	}
+	accountM, _ := json.Marshal(&account)
 	body := post.Body(accountM)
 	result := make(map[string]string)
 	result["token"] = ""
-	bytes, err := body.Bytes()
-	json.Unmarshal(bytes, &result)
+	bytes, _ := body.Bytes()
+	_ = json.Unmarshal(bytes, &result)
+
+	list.New()
 	return result["token"]
 }
 

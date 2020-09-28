@@ -23,6 +23,7 @@ func GetSensors(token string, orgid string) {
 	s, err := get.Bytes()
 	if err != nil {
 		zap.L().Error("获取sensor错误", zap.Any("err", err))
+		return
 	}
 	result := struct {
 		Total int64

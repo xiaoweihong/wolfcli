@@ -16,12 +16,10 @@ limitations under the License.
 package main
 
 import (
-	"go.uber.org/zap"
 	"wolfcli/cmd"
 	_ "wolfcli/initialize"
 )
 
 func main() {
-	zap.L().Debug("123")
 	cmd.Execute()
 }
