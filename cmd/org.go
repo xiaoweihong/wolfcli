@@ -35,21 +35,24 @@ var orgSearchCmd = &cobra.Command{
 	Long:  `查询组织`,
 	Run: func(cmd *cobra.Command, args []string) {
 		token := controller.GetToken()
-		controller.GetOrgs(token, global.DefaultOrgId)
+		controller.GetOrgs(token, global.OrgId)
+	},
+}
+
+var orgAddCmd = &cobra.Command{
+	Use:   "add",
+	Short: "添加组织",
+	Long:  `添加组织`,
+	Run: func(cmd *cobra.Command, args []string) {
+		token := controller.GetToken()
+		controller.AddOrg(token, global.OrgName, "0000")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(orgCmd)
 	orgCmd.AddCommand(orgSearchCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// orgCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	orgSearchCmd.Flags().StringVar(&global.DefaultOrgId, "org", "0000", "组织id")
+	orgCmd.AddCommand(orgAddCmd)
+	orgSearchCmd.Flags().StringVar(&global.OrgId, "orgid", "0000", "组织id")
+	orgAddCmd.Flags().StringVar(&global.OrgName, "orgname", "", "组织名称")
 }

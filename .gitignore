@@ -1,3 +1,6 @@
-.idea
+.idea/
 bin
 *.log
+.token
+.DS_Store
+

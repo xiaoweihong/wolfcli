@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"container/list"
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego/httplib"
@@ -24,8 +23,6 @@ func ProductToken() string {
 	result["token"] = ""
 	bytes, _ := body.Bytes()
 	_ = json.Unmarshal(bytes, &result)
-
-	list.New()
 	return result["token"]
 }
 

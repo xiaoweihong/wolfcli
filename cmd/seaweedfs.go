@@ -28,10 +28,22 @@ var seaweedfsDel = &cobra.Command{
 	},
 }
 
+// seaweedfsDel represents the seaweedfsDel command
+var seaweedfsDelMore = &cobra.Command{
+	Use:   "deleteByTime",
+	Short: "根据时间(天)删除volume",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		//time := cmd.Flag("time").Value.String()
+		controller.DeleteVolumeByTime()
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(seaweedfsCmd)
 	seaweedfsCmd.AddCommand(seaweedfsDel)
-	seaweedfsCmd.PersistentFlags().StringVar(&global.Day, "day", "0", "")
+	seaweedfsCmd.AddCommand(seaweedfsDelMore)
+	seaweedfsCmd.PersistentFlags().StringVar(&global.Day, "day", "180", "需要删除的图片的天数")
 
 	seaweedfsDel.Flags().Int("id", 0, "volumeID")
 }

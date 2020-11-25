@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"wolfcli/controller"
+	"wolfcli/global"
 )
 
 // sensorCmd represents the sensor command
@@ -37,9 +38,8 @@ var sensorSearchCmd = &cobra.Command{
 	Short: "查询设备",
 	Long:  `查询设备`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("查询设备")
 		token := controller.GetToken()
-		controller.GetSensors(token, "0000")
+		controller.GetSensors(token, global.OrgId)
 	},
 }
 
@@ -56,4 +56,7 @@ func init() {
 	rootCmd.AddCommand(sensorCmd)
 	sensorCmd.AddCommand(sensorSearchCmd)
 	sensorCmd.AddCommand(sensorAddCmd)
+
+	sensorSearchCmd.Flags().StringVar(&global.OrgId, "orgid", "0000", "组织id")
+
 }

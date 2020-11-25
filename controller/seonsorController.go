@@ -30,7 +30,11 @@ func GetSensors(token string, orgid string) {
 		Rets  []model.Sensor
 	}{}
 	json.Unmarshal(s, &result)
+	if result.Total == 0 {
+		zap.L().Info("该组织下没有设备")
+		return
+	}
 	for _, sensor := range result.Rets {
-		fmt.Println(sensor)
+		fmt.Printf("设备名称:%v 设备url:%v 设备类型:%v\n", sensor.Name, sensor.Url, sensor.Type)
 	}
 }
