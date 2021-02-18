@@ -7,9 +7,12 @@ import (
 	"github.com/chrislusf/seaweedfs/weed/operation"
 	"github.com/chrislusf/seaweedfs/weed/pb/master_pb"
 	"github.com/chrislusf/seaweedfs/weed/pb/volume_server_pb"
+	"github.com/chrislusf/seaweedfs/weed/storage/needle"
 	"github.com/chrislusf/seaweedfs/weed/wdclient"
 	"github.com/dustin/go-humanize"
+	"github.com/olekukonko/tablewriter"
 	"google.golang.org/grpc"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -59,12 +62,11 @@ func GetVolumeInfo(day string) (volumeList []*VolumeServerMap) {
 		fmt.Println("volume信息不存在，请检查volume与master之间是否正常")
 		return
 	}
+
 	for _, node := range resp.GetTopologyInfo().GetDataCenterInfos()[0].GetRackInfos()[0].GetDataNodeInfos() {
+		var s [][]string
 		volumeServerMap := &VolumeServerMap{}
 		volumeServerMap.VolumeServer = node.GetId()
-		fmt.Println(strings.Repeat("-~-", 20))
-		fmt.Printf("volume server:%v\n", node.GetId())
-		fmt.Println(strings.Repeat("-~-", 20))
 		volumeInfos := node.GetVolumeInfos()
 		sort.Slice(volumeInfos, func(i, j int) bool {
 			return volumeInfos[i].ModifiedAtSecond > volumeInfos[j].ModifiedAtSecond
@@ -73,15 +75,17 @@ func GetVolumeInfo(day string) (volumeList []*VolumeServerMap) {
 		for _, volume := range volumeInfos {
 			unix := time.Unix(volume.GetModifiedAtSecond(), 0)
 			if TimeNowZero().Sub(unix) > time.Duration(time.Hour*24*time.Duration(dayInt-1)) {
-				fmt.Printf("volumeId:%v\tsize:%v\ttime:%v ttl:%v\tcount:%v\n",
-					volume.GetId(),
-					humanize.Bytes(volume.GetSize()),
-					unix,
-					volume.GetTtl(),
-					volume.GetFileCount())
+				id := fmt.Sprintf("%v", volume.GetId())
+				size := fmt.Sprintf("%v", humanize.Bytes(volume.GetSize()))
+				last := fmt.Sprintf("%v", unix.String())
+				ttl := fmt.Sprintf("%v", needle.LoadTTLFromUint32(volume.GetTtl()))
+				count := fmt.Sprintf("%v", volume.GetFileCount())
+				tmp := []string{id, size, last, ttl, count}
+				s = append(s, tmp)
 				volumeServerMap.Volume = append(volumeServerMap.Volume, volume.GetId())
 			}
 		}
+		display(s, node.GetId())
 		volumeList = append(volumeList, volumeServerMap)
 	}
 	return
@@ -98,7 +102,6 @@ func DeleteVolumeById(id string) {
 			//        Url                PublicUrl
 			// 找到volume对应的volume server
 			locations, _ := mc.GetVidLocations(id)
-			//err := DeleteVolumeByVolumeServer(id, locations[0].PublicUrl)
 			err := operation.WithVolumeServerClient(locations[0].PublicUrl, grpc.WithInsecure(), func(volumeServerClient volume_server_pb.VolumeServerClient) error {
 				_, deleteErr := volumeServerClient.VolumeDelete(context.Background(), &volume_server_pb.VolumeDeleteRequest{
 					VolumeId: uint32(tid),
@@ -125,7 +128,6 @@ func DeleteVolumeByTime() {
 		}
 		for _, id := range volume.Volume {
 			locations, _ := mc.GetVidLocations(strconv.Itoa(int(id)))
-			//err := DeleteVolumeByVolumeServer(strconv.Itoa(int(id)), locations[0].PublicUrl)
 			err := operation.WithVolumeServerClient(locations[0].PublicUrl, grpc.WithInsecure(), func(volumeServerClient volume_server_pb.VolumeServerClient) error {
 				_, deleteErr := volumeServerClient.VolumeDelete(context.Background(), &volume_server_pb.VolumeDeleteRequest{
 					VolumeId: uint32(id),
@@ -175,4 +177,15 @@ func CheckServer() error {
 		return err
 	}
 	return nil
+}
+
+func display(data [][]string, server string) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "占用空间", "最后写入时间", "有效期", "图片数量"})
+	table.SetRowLine(true)
+	table.SetCaption(true, server)
+	for _, v := range data {
+		table.Append(v)
+	}
+	table.Render() // Send output
 }
