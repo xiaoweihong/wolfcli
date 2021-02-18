@@ -7,9 +7,8 @@ import (
 )
 
 func TestGetVolumeInfo(t *testing.T) {
-	a := time.Now().Format("2006-01-02")
-	fmt.Println(a)
-	parse, _ := time.Parse("2006-01-02", a)
-	fmt.Println(parse)
+	fmt.Println(time.Now())
+	zero := TimeNowZero()
+	fmt.Println(zero)
 	//time.Unix()
 }

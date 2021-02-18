@@ -21,7 +21,6 @@ var seaweedfsCmd = &cobra.Command{
 var seaweedfsDel = &cobra.Command{
 	Use:   "delete",
 	Short: "根据id删除volume",
-	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		id := cmd.Flag("id").Value.String()
 		controller.DeleteVolumeById(id)

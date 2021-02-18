@@ -3,10 +3,10 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/astaxie/beego/httplib"
 	"github.com/chrislusf/seaweedfs/weed/operation"
 	"github.com/chrislusf/seaweedfs/weed/pb/master_pb"
 	"github.com/chrislusf/seaweedfs/weed/pb/volume_server_pb"
-	"github.com/chrislusf/seaweedfs/weed/storage/needle"
 	"github.com/chrislusf/seaweedfs/weed/wdclient"
 	"github.com/dustin/go-humanize"
 	"google.golang.org/grpc"
@@ -27,13 +27,17 @@ var (
 	resp *master_pb.VolumeListResponse
 )
 
+// GetVolumeInfo 获取集群内图片信息
 func GetVolumeInfo(day string) (volumeList []*VolumeServerMap) {
 	dayInt, err := strconv.Atoi(day)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
+	if err := CheckServer(); err != nil {
+		fmt.Println("seaweedfs连不上,请检查", err)
+		return
+	}
 	mc = wdclient.NewMasterClient(
 		grpc.WithInsecure(),
 		"xiaowei",
@@ -83,20 +87,24 @@ func GetVolumeInfo(day string) (volumeList []*VolumeServerMap) {
 	return
 }
 
+// DeleteVolumeById 根据volumeId删除volume
 func DeleteVolumeById(id string) {
-	//volumeId, err := needle.NewVolumeId(id)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
+
 	listVolume := GetVolumeInfo(global.Day)
 	tid, _ := strconv.Atoi(id)
 	for _, server := range listVolume {
 		if IsContain(server.Volume, uint32(tid)) {
-			//vServer := server.VolumeServer
-			//err := deleteVolume(grpc.WithInsecure(), volumeId, vServer)
+			// [{10.244.0.117:9300 192.168.2.174:9300 }]
+			//        Url                PublicUrl
+			// 找到volume对应的volume server
 			locations, _ := mc.GetVidLocations(id)
-			err := DeleteVolume(id, locations[0].PublicUrl)
+			//err := DeleteVolumeByVolumeServer(id, locations[0].PublicUrl)
+			err := operation.WithVolumeServerClient(locations[0].PublicUrl, grpc.WithInsecure(), func(volumeServerClient volume_server_pb.VolumeServerClient) error {
+				_, deleteErr := volumeServerClient.VolumeDelete(context.Background(), &volume_server_pb.VolumeDeleteRequest{
+					VolumeId: uint32(tid),
+				})
+				return deleteErr
+			})
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -108,19 +116,7 @@ func DeleteVolumeById(id string) {
 	}
 }
 
-func DeleteVolume(id string, volumeServer string) error {
-	volumeId, err := needle.NewVolumeId(id)
-	if err != nil {
-		return err
-	}
-	err = deleteVolume(grpc.WithInsecure(), volumeId, volumeServer)
-	if err != nil {
-		return err
-	} else {
-		return nil
-	}
-}
-
+// DeleteVolumeByTime 根据天数删除volume
 func DeleteVolumeByTime() {
 	listVolume := GetVolumeInfo(global.Day)
 	for _, volume := range listVolume {
@@ -129,7 +125,13 @@ func DeleteVolumeByTime() {
 		}
 		for _, id := range volume.Volume {
 			locations, _ := mc.GetVidLocations(strconv.Itoa(int(id)))
-			err := DeleteVolume(strconv.Itoa(int(id)), locations[0].PublicUrl)
+			//err := DeleteVolumeByVolumeServer(strconv.Itoa(int(id)), locations[0].PublicUrl)
+			err := operation.WithVolumeServerClient(locations[0].PublicUrl, grpc.WithInsecure(), func(volumeServerClient volume_server_pb.VolumeServerClient) error {
+				_, deleteErr := volumeServerClient.VolumeDelete(context.Background(), &volume_server_pb.VolumeDeleteRequest{
+					VolumeId: uint32(id),
+				})
+				return deleteErr
+			})
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -141,24 +143,20 @@ func DeleteVolumeByTime() {
 
 }
 
-func deleteVolume(grpcDialOption grpc.DialOption, volumeId needle.VolumeId, sourceVolumeServer string) (err error) {
-	return operation.WithVolumeServerClient(sourceVolumeServer, grpcDialOption, func(volumeServerClient volume_server_pb.VolumeServerClient) error {
-		_, deleteErr := volumeServerClient.VolumeDelete(context.Background(), &volume_server_pb.VolumeDeleteRequest{
-			VolumeId: uint32(volumeId),
-		})
-		return deleteErr
-	})
-}
-
+// HostAndPort 返回master server 格式的地址.
+// 127.0.0.1:9333
 func HostAndPort() string {
 	return global.PicIP.String() + ":" + global.PicPort
 }
 
+// TimeNowZero 获得当前时间的0点.
+// 2021-02-18 15:55:22 +0800 CST --> 2021-02-18 00:00:00 +0800 CST
 func TimeNowZero() time.Time {
-	parse, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	parse, _ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02"), time.Local)
 	return parse
 }
 
+// IsContain 查询数字item是否存在于切片items里.
 func IsContain(items []uint32, item uint32) bool {
 	for _, eachItem := range items {
 		if eachItem == item {
@@ -166,4 +164,15 @@ func IsContain(items []uint32, item uint32) bool {
 		}
 	}
 	return false
+}
+
+// CheckServer 检查seaweedfsserver是否可联通.
+func CheckServer() error {
+	get := httplib.Get(fmt.Sprintf("http://%s", HostAndPort()))
+	get.SetTimeout(time.Second*3, time.Second)
+	_, err := get.Bytes()
+	if err != nil {
+		return err
+	}
+	return nil
 }
