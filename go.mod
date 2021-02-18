@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/astaxie/beego v1.12.3
-	github.com/chrislusf/seaweedfs v0.0.0-20201116054817-c0d279c54e56
+	github.com/chrislusf/seaweedfs v0.0.0-20210215213838-71f0c195157b
 	github.com/dustin/go-humanize v1.0.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v1.1.1
