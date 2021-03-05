@@ -58,6 +58,7 @@ func GetVolumeInfo(day string) (volumeList []*VolumeServerMap) {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println(resp.GetTopologyInfo())
 	if len(resp.GetTopologyInfo().GetDataCenterInfos()) == 0 {
 		fmt.Println("volume信息不存在，请检查volume与master之间是否正常")
 		return
@@ -67,7 +68,7 @@ func GetVolumeInfo(day string) (volumeList []*VolumeServerMap) {
 		var s [][]string
 		volumeServerMap := &VolumeServerMap{}
 		volumeServerMap.VolumeServer = node.GetId()
-		volumeInfos := node.GetVolumeInfos()
+		volumeInfos := node.VolumeInfos
 		sort.Slice(volumeInfos, func(i, j int) bool {
 			return volumeInfos[i].ModifiedAtSecond > volumeInfos[j].ModifiedAtSecond
 		})

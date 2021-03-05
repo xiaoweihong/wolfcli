@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/astaxie/beego v1.12.3
+	//github.com/chrislusf/seaweedfs v0.0.0-20210304220340-2e89c8c9aee1
 	github.com/chrislusf/seaweedfs v0.0.0-20210215213838-71f0c195157b
 	github.com/dustin/go-humanize v1.0.0
 	github.com/olekukonko/tablewriter v0.0.5
